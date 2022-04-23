@@ -2,6 +2,7 @@
 
 module Batcher.SyncWorker where
 
+import Batcher.Worker (createWorkerQeueu)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Network.AMQP as AMQP
@@ -10,9 +11,8 @@ import Queues (QueuesStorage, addQueue, removeQueue)
 syncExchange = "sync-pub-sub"
 
 -- handle sync messages and update the queues storage
-setupSyncWorker :: QueuesStorage -> IO ()
-setupSyncWorker queuesStorage = do
-  connection <- AMQP.openConnection "127.0.0.1" "/" "guest" "guest"
+setupSyncWorker :: QueuesStorage -> AMQP.Connection -> IO ()
+setupSyncWorker queuesStorage connection = do
   channel <- AMQP.openChannel connection
 
   AMQP.declareExchange
@@ -23,14 +23,7 @@ setupSyncWorker queuesStorage = do
         AMQP.exchangeDurable = False
       }
 
-  (queue, _, _) <-
-    AMQP.declareQueue
-      channel
-      AMQP.newQueue
-        { AMQP.queueName = "",
-          AMQP.queueAutoDelete = True,
-          AMQP.queueDurable = False
-        }
+  queue <- createWorkerQeueu channel
 
   AMQP.bindQueue channel queue syncExchange ""
 

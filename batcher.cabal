@@ -27,7 +27,9 @@ library
   exposed-modules:
       Batcher
       Batcher.ProcessingWorker
+      Batcher.SyncPublisher
       Batcher.SyncWorker
+      Batcher.Worker
       Http
       Queues
       Redis

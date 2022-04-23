@@ -1,6 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Queues (QueuesStorage, newQueueStorage, getRandomQueue, addQueue, removeQueue) where
 
 import qualified Data.ByteString as BS
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import Data.IORef
 
 type QueueName = BS.ByteString
@@ -11,7 +15,7 @@ newQueueStorage :: IO (IORef [QueueName])
 newQueueStorage = newIORef []
 
 getRandomQueue :: QueuesStorage -> IO QueueName
-getRandomQueue = undefined
+getRandomQueue _ = return "test"
 
 addQueue :: QueuesStorage -> QueueName -> IO ()
 addQueue ref queueName = atomicModifyIORef ref (\queues -> (filter (== queueName) queues, ()))
