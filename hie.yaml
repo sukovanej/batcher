@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "batcher:lib"
+
+    - path: "./app/Main.hs"
+      component: "batcher:exe:batcher-exe"
+
+    - path: "./app/Paths_batcher.hs"
+      component: "batcher:exe:batcher-exe"
+
+    - path: "./test"
+      component: "batcher:test:batcher-test"
