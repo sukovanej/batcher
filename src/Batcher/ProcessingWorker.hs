@@ -2,34 +2,36 @@
 
 module Batcher.ProcessingWorker () where
 
+import Batcher.Logger (Logger (..))
+import Batcher.Queues (QueuesStorage, addQueue, removeQueue)
 import Batcher.Worker (createWorkerQeueu)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Data.Map as Map
 import qualified Network.AMQP as AMQP
 import qualified Network.AMQP.Types as AMQPT
-import Queues (QueuesStorage, addQueue, removeQueue)
 
-setupProcessingWorker :: AMQP.Connection -> QueuesStorage -> IO AMQP.Channel
-setupProcessingWorker connection queuesStorage = do
+setupProcessingWorker :: Logger l => l -> AMQP.Connection -> QueuesStorage -> IO AMQP.Channel
+setupProcessingWorker logger connection queuesStorage = do
   channel <- AMQP.openChannel connection
   queue <- createWorkerQeueu channel
 
   AMQP.bindQueue channel queue queue ""
 
-  putStrLn " [processing-worker] Worker ready"
+  logInfo logger "Worker ready"
 
-  AMQP.consumeMsgs channel queue AMQP.Ack processingHandler
+  let handler = processingHandler $ logNew "processing-worker" logger
+  AMQP.consumeMsgs channel queue AMQP.Ack handler
 
   return channel
 
-processingHandler :: (AMQP.Message, AMQP.Envelope) -> IO ()
-processingHandler (msg, metadata) = do
+processingHandler :: Logger l => l -> (AMQP.Message, AMQP.Envelope) -> IO ()
+processingHandler logger (msg, metadata) = do
   let headers = AMQP.msgHeaders msg
   let replyTo = headers >>= getAffinityValueFromHeaders
   let affinityValue = headers >>= getAffinityValueFromHeaders
 
-  BS.putStrLn $ " [sync] Received " <> body
+  logInfo logger $ "Received " <> body
 
   AMQP.ackEnv metadata
   where

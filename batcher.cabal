@@ -25,15 +25,15 @@ source-repository head
 
 library
   exposed-modules:
-      Batcher
+      Batcher.Http
+      Batcher.Logger
+      Batcher.Models
       Batcher.ProcessingWorker
+      Batcher.Queues
+      Batcher.Redis
       Batcher.SyncPublisher
       Batcher.SyncWorker
       Batcher.Worker
-      Http
-      Queues
-      Redis
-      Utils
   other-modules:
       Paths_batcher
   hs-source-dirs:

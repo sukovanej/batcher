@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Queues (QueuesStorage, newQueueStorage, getRandomQueue, addQueue, removeQueue) where
+module Batcher.Queues (QueuesStorage, QueueName, newQueueStorage, getRandomQueue, addQueue, removeQueue) where
 
+import Batcher.Models (QueueName)
 import qualified Data.ByteString as BS
+import Data.IORef
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
-import Data.IORef
-
-type QueueName = BS.ByteString
 
 type QueuesStorage = IORef [QueueName]
 

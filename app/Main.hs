@@ -2,22 +2,11 @@
 
 module Main where
 
-import Batcher (emitMessage, receiveMessage)
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Monad (replicateM_)
-import qualified Data.Text as T
-import qualified Database.Redis as R
-import Http (runHttpApplication)
-import qualified Network.AMQP as AMQP
-import Queues (newQueueStorage)
-import Redis (createRedisConnection)
+import Batcher.Logger (createDebugLogger)
+import Batcher.Redis (createRedisConnection)
 import Batcher.Worker (createAmqpConnection)
-
-milisecond = 1000
-
-second = 1000 * milisecond
-
-exchange = "batcher-exchange"
+import Batcher.Http (runHttpApplication)
+import Batcher.Queues (newQueueStorage)
 
 main :: IO ()
 main = mainApi
@@ -27,7 +16,8 @@ mainApi = do
   redisConnection <- createRedisConnection
   amqpConnection <- createAmqpConnection
   queuesStorage <- newQueueStorage
-  runHttpApplication queuesStorage redisConnection
+  let logger = createDebugLogger "api"
+  runHttpApplication logger queuesStorage redisConnection amqpConnection
 
 mainWorker :: IO ()
 mainWorker = do
