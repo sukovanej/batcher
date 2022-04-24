@@ -25,9 +25,11 @@ source-repository head
 
 library
   exposed-modules:
+      Batcher.Constants
       Batcher.Http
       Batcher.Logger
       Batcher.Models
+      Batcher.ProcessingPublisher
       Batcher.ProcessingWorker
       Batcher.Queues
       Batcher.Redis
@@ -46,6 +48,7 @@ library
     , containers
     , hedis
     , http-types
+    , random
     , text
     , wai
     , warp
@@ -67,6 +70,7 @@ executable batcher-exe
     , containers
     , hedis
     , http-types
+    , random
     , text
     , wai
     , warp
@@ -89,6 +93,7 @@ test-suite batcher-test
     , containers
     , hedis
     , http-types
+    , random
     , text
     , wai
     , warp

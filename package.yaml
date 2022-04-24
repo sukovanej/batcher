@@ -30,6 +30,7 @@ dependencies:
 - http-types
 - hedis
 - containers
+- random
 
 library:
   source-dirs: src

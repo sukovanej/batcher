@@ -7,6 +7,7 @@ import qualified Data.ByteString as BS
 import Data.IORef
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
+import System.Random (randomRIO)
 
 type QueuesStorage = IORef [QueueName]
 
@@ -14,7 +15,10 @@ newQueueStorage :: IO (IORef [QueueName])
 newQueueStorage = newIORef []
 
 getRandomQueue :: QueuesStorage -> IO QueueName
-getRandomQueue _ = return "test"
+getRandomQueue ref = do
+  storage <- readIORef ref
+  index <- randomRIO (0, length storage - 1)
+  return $ storage !! index
 
 addQueue :: QueuesStorage -> QueueName -> IO ()
 addQueue ref queueName = atomicModifyIORef ref (\queues -> (filter (== queueName) queues, ()))
