@@ -3,9 +3,10 @@
 module Batcher.Http (runHttpApplication) where
 
 import Batcher.Logger (Logger (..))
-import Batcher.Models (CreateCallbackQueueFn, PublishProcessingFn, QueueAlreadyAssigned, RequestBody, ResponseQueue, ResponseBody, AffinityValue)
+import Batcher.Models (AffinityValue, CreateCallbackQueueFn, PublishProcessingFn, QueueAlreadyAssigned, RequestBody, ResponseBody, ResponseQueue)
 import Batcher.Queues (QueueName, QueuesStorage, getRandomQueue)
 import Batcher.Redis (RedisConnection, assignQueueAndReturn)
+import Batcher.Worker (blockForAsyncResponse)
 import Data.Aeson (FromJSON, Key, Object, ToJSONKey (toJSONKey), Value (Object), decode, encode)
 import Data.Aeson.Types (parseMaybe, (.:))
 import qualified Data.ByteString as BS
@@ -18,7 +19,6 @@ import qualified Network.AMQP as AMQP
 import qualified Network.HTTP.Types as HTTPT
 import qualified Network.Wai as WAI
 import qualified Network.Wai.Handler.Warp as WARP
-import Batcher.Worker (blockForAsyncResponse)
 
 type JsonPath = [Key]
 

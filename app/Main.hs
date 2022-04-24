@@ -8,8 +8,8 @@ import Batcher.ProcessingPublisher (publishProcessing)
 import Batcher.ProcessingWorker (setupProcessingWorker)
 import Batcher.Queues (newQueueStorage)
 import Batcher.Redis (createRedisConnection)
-import Batcher.Worker (createAmqpChannel, createAmqpConnection, createCallbackQueue, declareProcessingExchange, declareSyncExchange, closeAmqpChannel)
 import Batcher.SyncWorker (setupSyncWorker)
+import Batcher.Worker (closeAmqpChannel, createAmqpChannel, createAmqpConnection, createCallbackQueue, declareProcessingExchange, declareSyncExchange)
 
 main :: IO ()
 main = mainApi

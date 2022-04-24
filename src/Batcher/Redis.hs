@@ -3,13 +3,13 @@
 module Batcher.Redis (createRedisConnection, assignQueueAndReturn, RedisConnection) where
 
 import Batcher.Logger (Logger (..))
-import Batcher.Models (QueueName, AffinityValue, QueueAlreadyAssigned)
+import Batcher.Models (AffinityValue, QueueAlreadyAssigned, QueueName)
 import Control.Applicative
+import Data.Bifunctor
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 import Data.Functor
 import Data.Maybe
-import Data.Bifunctor
 import qualified Database.Redis as R
 
 type ExpireMiliseconds = Int
@@ -36,7 +36,7 @@ atomicSetGet :: RedisKey -> RedisValue -> ExpireMiliseconds -> R.Redis (Either R
 atomicSetGet key value expire =
   R.sendRequest ["SET", key, value, "NX", "PX", integerToByteString expire]
 
-createAffinityKey :: AffinityValue  -> RedisKey
+createAffinityKey :: AffinityValue -> RedisKey
 createAffinityKey = (<>) "queue_for:"
 
 assignQueueAndReturn :: Logger l => l -> QueueName -> AffinityValue -> ExpireMiliseconds -> RedisConnection -> IO (Either R.Reply (QueueAlreadyAssigned, Maybe BS.ByteString))
@@ -47,7 +47,7 @@ assignQueueAndReturn logger queueName affinityValue expire connection = do
     getResponse <- R.get key
     return $ liftA2 (,) getSetResponse getResponse
 
-  case response of 
+  case response of
     Right (getSetResponse, getResponse) -> logDebug logger $ "getSetResponse: " <> show getSetResponse
     Left reply -> logError logger $ "Response: " <> show reply
 

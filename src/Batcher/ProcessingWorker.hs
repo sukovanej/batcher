@@ -44,7 +44,7 @@ processingHandler logger channel (msg, metadata) = do
   logDebug logger $ "Headers: " <> show headers
 
   case replyTo of
-    Just replyTo -> do 
+    Just replyTo -> do
       publishProcessingResponse channel replyTo (LBS.toStrict body)
       logDebug logger $ "Response sent to queue " <> replyTo
     Nothing -> logError logger "No reply-to header set"
