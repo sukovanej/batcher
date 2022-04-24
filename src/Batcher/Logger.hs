@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 
-module Batcher.Logger (createDebugLogger, Logger(..)) where
+module Batcher.Logger (createDebugLogger, Logger (..)) where
 
 import Data.List
 
@@ -20,10 +20,28 @@ newtype DebugLogger = DebugLogger
 createDebugLogger :: LoggerPath -> DebugLogger
 createDebugLogger name = DebugLogger {path = [name]}
 
-logToStdout :: Show s => LoggerPath -> DebugLogger -> s -> IO ()
-logToStdout severity logger msg = putStrLn $ "[" <> severity <> "] {" <> loggerPath <> "} " <> show msg
+colorReset = "\x001b[0m"
+
+getColorBySeverity :: String -> String
+getColorBySeverity "debug" = "\x001b[34m"
+getColorBySeverity "info" = "\x001b[32m"
+getColorBySeverity "warn" = "\x001b[33m"
+getColorBySeverity "error" = "\x001b[31m"
+getColorBySeverity _ = undefined
+
+padSeverity :: String -> String
+padSeverity str =
+  if strLen < 5
+    then (++) str $ replicate (5 - strLen) ' '
+    else str
+  where
+    strLen = length str
+
+logToStdout :: Show s => String -> DebugLogger -> s -> IO ()
+logToStdout severity logger msg = putStrLn $ "[" <> color <> padSeverity severity <> colorReset <> "] {" <> loggerPath <> "} " <> show msg
   where
     loggerPath = intercalate "." $ path logger
+    color = getColorBySeverity severity
 
 instance Logger DebugLogger where
   logDebug :: Show s => DebugLogger -> s -> IO ()

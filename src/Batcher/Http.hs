@@ -63,10 +63,10 @@ processAssignedQueue :: Logger l => l -> QueueAlreadyAssigned -> Maybe QueueName
 processAssignedQueue logger _ Nothing = logError logger "No queue returned from redis" $> Nothing
 processAssignedQueue logger queueAlreadyAssigned (Just queue) = do
   logInfo logger $ "Queue found: " <> queue
-  if queueAlreadyAssigned 
-    then logDebug logger "Gonna send the task"
-    -- TODO: setup processing worker
-    else logDebug logger "Gonna create the processing worker"
+  if queueAlreadyAssigned
+    then logDebug logger "Gonna send the task only"
+    else -- TODO: setup processing worker
+      logDebug logger "Gonna create the processing worker"
 
   -- TODO: send task for processing
   return $ Just queue
