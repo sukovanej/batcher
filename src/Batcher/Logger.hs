@@ -27,7 +27,7 @@ getColorBySeverity "debug" = "\x001b[34m"
 getColorBySeverity "info" = "\x001b[32m"
 getColorBySeverity "warn" = "\x001b[33m"
 getColorBySeverity "error" = "\x001b[31m"
-getColorBySeverity _ = undefined
+getColorBySeverity _ = "\x001b[33m"
 
 padSeverity :: String -> String
 padSeverity str =
