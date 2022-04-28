@@ -48,6 +48,7 @@ library
     , containers
     , hedis
     , http-types
+    , mtl
     , random
     , text
     , wai
@@ -70,6 +71,7 @@ executable batcher-exe
     , containers
     , hedis
     , http-types
+    , mtl
     , random
     , text
     , wai
@@ -93,6 +95,7 @@ test-suite batcher-test
     , containers
     , hedis
     , http-types
+    , mtl
     , random
     , text
     , wai

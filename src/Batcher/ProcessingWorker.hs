@@ -3,7 +3,7 @@
 module Batcher.ProcessingWorker (setupProcessingWorker) where
 
 import Batcher.Constants (processingExchangeName)
-import Batcher.Logger (Logger (..))
+import Batcher.Logger (HasLogger (..))
 import Batcher.ProcessingPublisher (publishProcessingResponse)
 import Batcher.SyncPublisher (publishSync, publishSyncNewQueue)
 import Batcher.Worker (createWorkerQeueu)
@@ -14,7 +14,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Network.AMQP as AMQP
 import qualified Network.AMQP.Types as AMQPT
 
-setupProcessingWorker :: Logger l => l -> AMQP.Connection -> IO AMQP.Channel
+setupProcessingWorker :: HasLogger l => l -> AMQP.Connection -> IO AMQP.Channel
 setupProcessingWorker logger connection = do
   channel <- AMQP.openChannel connection
   queueName <- createWorkerQeueu channel
@@ -23,7 +23,7 @@ setupProcessingWorker logger connection = do
 
   logInfo logger "Worker ready"
 
-  let handlerLogger = logNew "handler" logger
+  let handlerLogger = logNew logger "handler"
   let handler = processingHandler handlerLogger channel
   AMQP.consumeMsgs channel queueName AMQP.Ack handler
   publishSyncNewQueue channel (TE.encodeUtf8 queueName)
@@ -32,7 +32,7 @@ setupProcessingWorker logger connection = do
 
   return channel
 
-processingHandler :: Logger l => l -> AMQP.Channel -> (AMQP.Message, AMQP.Envelope) -> IO ()
+processingHandler :: HasLogger l => l -> AMQP.Channel -> (AMQP.Message, AMQP.Envelope) -> IO ()
 processingHandler logger channel (msg, metadata) = do
   let headers = AMQP.msgHeaders msg
   let replyTo = headers >>= getReplyToFromHeaders

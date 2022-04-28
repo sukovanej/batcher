@@ -2,7 +2,7 @@
 
 module Main where
 
-import Batcher.Http (runHttpApplication)
+import Batcher.Http (HttpEnv(..), runHttpApplication)
 import Batcher.Logger (createDebugLogger)
 import Batcher.ProcessingPublisher (publishProcessing)
 import Batcher.ProcessingWorker (setupProcessingWorker)
@@ -43,7 +43,16 @@ mainApi = do
   let publishProcessing' = publishProcessing processingPublisherChannel
   let createCallbackQueue' = createCallbackQueue amqpConnection
 
-  runHttpApplication apiLogger queuesStorage redisConnection publishProcessing' createCallbackQueue'
+  let httpEnv =
+        HttpEnv
+          { envPublishProcessing = publishProcessing',
+            envCreateCallbackQueue = createCallbackQueue',
+            envQueuesStorage = queuesStorage,
+            envRedisConnection = redisConnection,
+            envLog = apiLogger
+          }
+
+  runHttpApplication httpEnv
 
 mainWorker :: IO ()
 mainWorker = do

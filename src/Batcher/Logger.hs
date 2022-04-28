@@ -1,17 +1,31 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
-module Batcher.Logger (createDebugLogger, Logger (..)) where
+module Batcher.Logger (createDebugLogger, DebugLogger, HasLogger (..)) where
 
+import Control.Monad
+import Control.Monad.IO.Class
 import Data.List
 
 type LoggerPath = String
 
-class Logger a where
+data LogSeverity = Debug | Info | Warn | Error
+
+class HasLogger a where
+  logOut :: Show s => a -> LogSeverity -> s -> IO ()
+  logNew :: a -> LoggerPath -> a
+
   logDebug :: Show s => a -> s -> IO ()
+  logDebug l = logOut l Debug
+
   logInfo :: Show s => a -> s -> IO ()
+  logInfo l = logOut l Info
+
   logWarn :: Show s => a -> s -> IO ()
+  logWarn l = logOut l Warn
+
   logError :: Show s => a -> s -> IO ()
-  logNew :: LoggerPath -> a -> a
+  logError l = logOut l Error
 
 newtype DebugLogger = DebugLogger
   { path :: [LoggerPath]
@@ -22,12 +36,17 @@ createDebugLogger name = DebugLogger {path = [name]}
 
 colorReset = "\x001b[0m"
 
-getColorBySeverity :: String -> String
-getColorBySeverity "debug" = "\x001b[34m"
-getColorBySeverity "info" = "\x001b[32m"
-getColorBySeverity "warn" = "\x001b[33m"
-getColorBySeverity "error" = "\x001b[31m"
-getColorBySeverity _ = "\x001b[33m"
+getColorBySeverity :: LogSeverity -> String
+getColorBySeverity Debug = "\x001b[34m"
+getColorBySeverity Info = "\x001b[32m"
+getColorBySeverity Warn = "\x001b[33m"
+getColorBySeverity Error = "\x001b[31m"
+
+getTextBySeverity :: LogSeverity -> String
+getTextBySeverity Debug = "debug"
+getTextBySeverity Info = "info"
+getTextBySeverity Warn = "warn"
+getTextBySeverity Error = "error"
 
 padSeverity :: String -> String
 padSeverity str =
@@ -37,24 +56,13 @@ padSeverity str =
   where
     strLen = length str
 
-logToStdout :: Show s => String -> DebugLogger -> s -> IO ()
-logToStdout severity logger msg = putStrLn $ "[" <> color <> padSeverity severity <> colorReset <> "] {" <> loggerPath <> "} " <> show msg
-  where
-    loggerPath = intercalate "." $ path logger
-    color = getColorBySeverity severity
+instance HasLogger DebugLogger where
+  logOut :: Show s => DebugLogger -> LogSeverity -> s -> IO ()
+  logOut logger severity msg = putStrLn $ "[" <> color <> severityText <> colorReset <> "] {" <> loggerPath <> "} " <> show msg
+    where
+      loggerPath = intercalate "." $ path logger
+      color = getColorBySeverity severity
+      severityText = padSeverity . getTextBySeverity $ severity
 
-instance Logger DebugLogger where
-  logDebug :: Show s => DebugLogger -> s -> IO ()
-  logDebug = logToStdout "debug"
-
-  logInfo :: Show s => DebugLogger -> s -> IO ()
-  logInfo = logToStdout "info"
-
-  logWarn :: Show s => DebugLogger -> s -> IO ()
-  logWarn = logToStdout "warn"
-
-  logError :: Show s => DebugLogger -> s -> IO ()
-  logError = logToStdout "error"
-
-  logNew :: LoggerPath -> DebugLogger -> DebugLogger
-  logNew name logger = logger {path = path logger ++ [name]}
+  logNew :: DebugLogger -> LoggerPath -> DebugLogger
+  logNew logger name = logger {path = path logger ++ [name]}
