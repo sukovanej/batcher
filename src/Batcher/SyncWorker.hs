@@ -3,7 +3,7 @@
 module Batcher.SyncWorker where
 
 import Batcher.Constants (syncExchangeName)
-import Batcher.Logger (Logger (..))
+import Batcher.Logger (HasLogger (..))
 import Batcher.Queues (QueuesStorage, addQueue, removeQueue)
 import Batcher.Worker (createWorkerQeueu)
 import qualified Data.ByteString.Char8 as BS
@@ -11,7 +11,7 @@ import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Network.AMQP as AMQP
 
 -- handle sync messages and update the queues storage
-setupSyncWorker :: Logger l => l -> QueuesStorage -> AMQP.Connection -> IO ()
+setupSyncWorker :: HasLogger l => l -> QueuesStorage -> AMQP.Connection -> IO ()
 setupSyncWorker logger queuesStorage connection = do
   channel <- AMQP.openChannel connection
   queue <- createWorkerQeueu channel
@@ -20,7 +20,7 @@ setupSyncWorker logger queuesStorage connection = do
 
   logInfo logger "Worker ready"
 
-  let handlerLogger = logNew "sync-worker" logger
+  let handlerLogger = logNew logger "sync-worker"
   let handler = syncHandler logger queuesStorage
   AMQP.consumeMsgs channel queue AMQP.Ack handler
 
@@ -28,7 +28,7 @@ setupSyncWorker logger queuesStorage connection = do
 
 data SyncAction = QeueuAdded BS.ByteString | QeueuRemoved BS.ByteString | Unknown BS.ByteString
 
-syncHandler :: Logger l => l -> QueuesStorage -> (AMQP.Message, AMQP.Envelope) -> IO ()
+syncHandler :: HasLogger l => l -> QueuesStorage -> (AMQP.Message, AMQP.Envelope) -> IO ()
 syncHandler logger queuesStorage (msg, metadata) = do
   logInfo logger $ "Received " <> body
   triggerSyncAction logger queuesStorage $ parseSyncMessage body
@@ -36,7 +36,7 @@ syncHandler logger queuesStorage (msg, metadata) = do
   where
     body = LBS.toStrict $ AMQP.msgBody msg
 
-triggerSyncAction :: Logger l => l -> QueuesStorage -> SyncAction -> IO ()
+triggerSyncAction :: HasLogger l => l -> QueuesStorage -> SyncAction -> IO ()
 triggerSyncAction logger queuesStorage (QeueuAdded queue) =
   removeQueue queuesStorage queue
     *> logInfo logger ("Queue added: " <> queue)

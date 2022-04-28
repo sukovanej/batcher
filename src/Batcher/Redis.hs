@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Batcher.Redis (createRedisConnection, assignQueueAndReturn, RedisConnection) where
+module Batcher.Redis (createRedisConnection, assignQueueAndReturn, RedisConnection, HasRedisConnection(..)) where
 
-import Batcher.Logger (Logger (..))
+import Batcher.Logger (HasLogger (..))
 import Batcher.Models (AffinityValue, QueueAlreadyAssigned, QueueName)
 import Control.Applicative
 import Data.Bifunctor
@@ -22,6 +22,9 @@ type RedisConnection = R.Connection
 
 integerToByteString = BSC.pack . show
 
+class HasRedisConnection a where
+  redisConnection :: a -> RedisConnection
+
 createRedisConnection :: IO RedisConnection
 createRedisConnection =
   R.checkedConnect
@@ -39,17 +42,17 @@ atomicSetGet key value expire =
 createAffinityKey :: AffinityValue -> RedisKey
 createAffinityKey = (<>) "queue_for:"
 
-assignQueueAndReturn :: Logger l => l -> QueueName -> AffinityValue -> ExpireMiliseconds -> RedisConnection -> IO (Either R.Reply (QueueAlreadyAssigned, Maybe BS.ByteString))
-assignQueueAndReturn logger queueName affinityValue expire connection = do
-  logDebug logger $ "Request key=" <> key <> ", value=" <> queueName
-  response <- R.runRedis connection $ do
+assignQueueAndReturn :: (HasLogger env, HasRedisConnection env) => env -> QueueName -> AffinityValue -> ExpireMiliseconds -> IO (Either R.Reply (QueueAlreadyAssigned, Maybe BS.ByteString))
+assignQueueAndReturn env queueName affinityValue expire = do
+  logDebug env $ "Request key=" <> key <> ", value=" <> queueName
+  response <- R.runRedis (redisConnection env) $ do
     getSetResponse <- atomicSetGet key queueName expire
     getResponse <- R.get key
     return $ liftA2 (,) getSetResponse getResponse
 
   case response of
-    Right (getSetResponse, getResponse) -> logDebug logger $ "getSetResponse: " <> show getSetResponse
-    Left reply -> logError logger $ "Response: " <> show reply
+    Right (getSetResponse, getResponse) -> logDebug env $ "getSetResponse: " <> show getSetResponse
+    Left reply -> logError env $ "Response: " <> show reply
 
   return $ response <&> first isNothing
   where
