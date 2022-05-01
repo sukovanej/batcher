@@ -9,6 +9,8 @@ module Batcher.Worker
     createCallbackQueue,
     blockForAsyncResponse,
     closeAmqpChannel,
+    HasAmqpChannel(..),
+    HasAmqpConnection(..)
   )
 where
 
@@ -20,6 +22,12 @@ import Data.Functor
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Network.AMQP as AMQP
+
+class HasAmqpChannel a where
+  amqpChannel :: a -> AMQP.Channel
+
+class HasAmqpConnection a where
+  amqpConnection :: a -> AMQP.Connection
 
 createAmqpConnection :: IO AMQP.Connection
 createAmqpConnection = AMQP.openConnection "127.0.0.1" "/" "guest" "guest"

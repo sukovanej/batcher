@@ -4,15 +4,37 @@ module Batcher.ProcessingWorker (setupProcessingWorker) where
 
 import Batcher.Constants (processingExchangeName)
 import Batcher.Logger (HasLogger (..))
+import Batcher.Models (AffinityValue, QueueName)
 import Batcher.ProcessingPublisher (publishProcessingResponse)
 import Batcher.SyncPublisher (publishSync, publishSyncNewQueue)
 import Batcher.Worker (createWorkerQeueu)
+import Control.Concurrent (MVar, newEmptyMVar, withMVar)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import Data.Functor
 import qualified Data.Map as Map
 import qualified Data.Text.Encoding as TE
 import qualified Network.AMQP as AMQP
 import qualified Network.AMQP.Types as AMQPT
+
+--
+
+type AmqpMessage = BS.ByteString
+
+type Request = (AmqpMessage, QueueName)
+
+type RequestChannel = MVar Request
+
+type SyncStorage = MVar (Map.Map AffinityValue RequestChannel)
+
+handleRequest :: AmqpMessage -> QueueName -> AffinityValue -> SyncStorage -> IO RequestChannel
+handleRequest msg queueName affinityValue syncStorage = withMVar syncStorage $
+  \map -> do
+    case Map.lookup affinityValue map of
+      Just sync -> return sync
+      Nothing -> Map.insert affinityValue <$> newEmptyMVar
+
+--
 
 setupProcessingWorker :: HasLogger l => l -> AMQP.Connection -> IO AMQP.Channel
 setupProcessingWorker logger connection = do
@@ -53,7 +75,7 @@ processingHandler logger channel (msg, metadata) = do
   where
     body = LBS.toStrict $ AMQP.msgBody msg
 
-getAffinityValueFromHeaders :: AMQPT.FieldTable -> Maybe BS.ByteString
+getAffinityValueFromHeaders :: AMQPT.FieldTable -> Maybe AffinityValue
 getAffinityValueFromHeaders (AMQPT.FieldTable m) = do
   value <- Map.lookup "affinity-value" m
   case value of
